@@ -1,0 +1,1054 @@
+Cryptography Sample Programs With CRYPT.C V1.00    
+Copyright 1995 Willis E. Howard, III
+email: WEHoward@aol.com
+mail:  P.O.Box 1473  Elkhart, Indiana 46515
+
+
+PURPOSE OF THE PROGRAMS
+
+Quite a few years ago I started using a cryptography program that had been 
+well reviewed.  It used an algorithm based on prime numbers, exclusive ORs,
+and secret phrases.  I encrypted sensitive files with this program, and felt 
+secure that they could not be readily deciphered.
+
+Then I read Bruce Schneier's book "Applied Cryptography".  Suddenly I knew
+that my trusted algorithm was essentially an unlocked door that would easily 
+open.  Even the encryption option of PKZIP offers little security.  
+
+Bruce Schneier also provides a disk set of cryptographic programs to go along
+with his book.  There is enough information and source code to keep anyone 
+busy for a long time.  But one thing seemed to be lacking: a common interface
+to the various ciphers.  Some of the code was only an algorithm in C without
+any instructions on how to apply it.  Some had test examples built in.  They 
+were all written by different people, all in different styles.
+
+To improve my own cryptographic software, I wanted to test several of those
+ciphers with a simple user interface.  I wanted to have a common basis for
+opening files, timing and error handling.  To do this, I wrote the program
+CRYPT.C and wrote interface functions for several of the code samples that
+were provided on the distribution disks.  Some of that code was slightly 
+modified to allow it to interface to CRYPT.C, but none of the cryptographic 
+sections of the code were changed.  In addition, some new programs were 
+written.  These files are the result.
+
+The cryptography sample programs illustrate the use of cryptographic sample 
+code in stand alone software.  Each program has its own built-in help that 
+extends over several screens.  Be sure to read the key information to get
+a definition of the key format.  This is important because the different 
+ciphers require very specific kinds of keys.  All programs run under MSDOS.
+
+All of these programs are secret key ciphers.  They are only good for as 
+long as you keep your key secret.  Key management is very important. It is
+not discussed here, but is something to be considered very seriously.
+
+
+WHAT IS WRONG WITH COMMERCIAL CRYPTOGRAPHY SOFTWARE?
+
+Nothing is really wrong with it.  But, as users we are exposed to a lot of
+hype.  And, it's hard to see through the hype to get good information.
+
+Some vendors do not even let you know the cryptographic algorithm and mode
+of implementation that they use.  How can you judge the quality of your
+security if they don't even let you know exactly what they do?
+
+To know that you have a secure cipher, it is best to select one that has
+survived a lot of testing by experts.  On the surface, some ciphers that
+seem very secure can often be analyzed and broken by computers in a matter
+of seconds.  Other ciphers that don't look very special can take computers
+a very long time to analyze, or can not be broken at all.  One time pads,
+the DES cipher, and the IDEA cipher all seem to have survived hard testing.
+
+Even if the DES or IDEA cipher is used, encrypted data can be broken if the
+same key is always used on many files.  These block algorithms can be greatly
+strengthened by using the cipher block chaining (CBC) mode of encryption.  In
+this mode the key is continually modified by the previous block of encrypted
+data.  The effective key is thus different for different files.
+
+If you start looking around with FTP on the internet, you can find a lot of
+source code for cryptography.  It is hard to find complete applications or
+systems as source code, however.  An important exception is PGP.
+
+If you are serious about having a complete cryptography system, get PGP.  It 
+is available on most bulletin boards, or via FTP on the Internet.  Don't 
+bother looking for it on CompuServe or America Online, though.  PGP will 
+provide a public key encryption system for your use.  The programs here are 
+not public key cryptography.  Rather, they rely upon you to keep the key 
+secret.  They may be useful for encrypting your own files, but PGP provides
+better software for exchanging encrypted information with others.
+
+One system that receives a lot of attention is RSA.  Although it is considered
+the most secure public key cryptography system today, it has some drawbacks.
+It is about 1000 times slower than the slowest block cipher software.  More 
+importantly, progress in breaking RSA public keys is making the news almost 
+daily.  It is said that 150-200 digits are needed in the RSA keys for good 
+security.  Keys with 120 digits are now being broken.  In another 10 or 5 or
+2 years, that number will reach 150.  And then it will reach 200.  Although
+secure today, that security may not last.
+
+
+COMMON INTERFACE TO THE PROGRAMS
+
+All cryptographic algorithms are linked with the same main module CRYPT.C.  
+This module provides a common interface for all the routines, requiring you 
+to learn only one way of encrypting and decrypting files.  Keys do have 
+special formats for each of the ciphers.
+
+The following help information will always be displayed for any cryptographic
+program "progname" when the command "progname -?" is given.    The CIPHER and 
+KEY sections will be different for each program.  If you just type in the name
+of the program without any arguments, the program usage will be displayed.
+
+  NAME
+      progname - perform file encryption and decryption
+
+  SYNOPSIS
+      progname [-edcqQgG] [-k "key"] [-f file] [-# number] infile ...
+      progname [-edcqQgG] [-k "key"] [-f file] [-# number] infile -o outfile
+
+  DESCRIPTION
+      This program will encrypt and decrypt a file based on a key.
+      The required key format will depend on the cipher.
+
+  OPTIONS
+      All options are processed before any file names are processed on
+      any line.  When command input is from a file, the input will be
+      processed line by line.  Options that require an argument must be 
+      separated from the argument by at least one space.  Neither input
+      nor output may be the standard input or standard output.
+
+      -e        The -e option selects encryption (default).
+
+      -d        The -d option selects decryption.
+
+      -c        Display the copyright notice.
+
+      -o name   Option to indicate that the following file name is the
+                output file name.  With this flag, input and output file
+                names may contain no wildcards.  If the -o option is given,
+                the input file will not be deleted unless the -G or -Q
+                option is given.  If the -o option is given, only one input
+                file name and one output file name may appear on the command
+                line.  It is an error to give the -o option without also
+                specifying the input and output file names. If command input
+                is from a command file (with -f) and the -o option is used,
+                the input and output file names must appear on the same line
+                as the -o option.  Separate command input lines may contain
+                separate -o option lines.  If the -o option is not given,
+                the input file will always be deleted.  If the -o option is
+                not given, multiple input file names may appear on the
+                command line, and the input file names may contain MSDOS
+                wildcards. 
+
+      -k "key"  Encryption key.  If the key contains no blanks and does
+                not start with "-", the quotes are not required.  This
+                overrides any key in the crypt key file that is read by
+                default.  If the key is "?", you will be prompted to
+                enter the key on the keyboard, and after the key is entered
+                the screen will be cleared.  If there is no crypt key
+                file and no key is given on the command line, you will
+                be prompted for a key.  The name of the crypt key file
+                is the same as the program, but with a .KEY extension.
+
+      -f name   The named file is taken as a command file and may
+                contain options and file names to encrypt.
+
+      -# number If the output file name is not given with the -o
+                option, the output file is renamed to the input name.
+                The original file is overwritten with the number 85
+                (character 'U') and then deleted.  If a number is given
+                with the -# option, the deleted file is filled with
+                that decimal number.
+
+      -q        This option selects a quick delete of the input
+                file when the -o option has not been given.  The
+                quick delete writes 85's (U) to the file.  If a number
+                is defined with the # option, that number is used
+                in place of the 85's.  If the -o option has been
+                given, using this -q option will not cause the input
+                file to be deleted.  This is the default.
+
+      -Q        This option selects a quick delete of the input
+                file whether or not the -o option was given.
+
+      -g        This option selects the U.S.Government slow delete
+                of the input file when the -o option has not been
+                given.  It deletes the file according to DOD 5220.22M
+                where the input file is overwritten with ones, zeroes,
+                ones, zeroes, ones, zeroes, and then decimal 85.  If 
+                a number is defined with the # option, that number is 
+                used in place of the 85.  If the -o option has been
+                given, using this -g option will not cause the input
+                file to be deleted.
+
+      -G        This option selects the U.S.Government slow delete
+                of the input file per DOD 5220.22M whether or not the
+                -o option was given.
+
+      -?        Give help on the program and cipher.  This must
+                be the only argument on the command line.
+
+  CIPHER
+      The specific cipher is described in this cipher section.
+
+  KEY
+      Specific key requirements are described in this key section.
+
+Most error conditions will result in the program closing the input and output
+files, reporting the error, clearing the key from memory, and exiting.  If
+multiple files are being processed, an error on one of the files will cause
+a halt to the processing of further files.  You may need to check the file
+dates to determine which have been modified.  If you requested that a read
+only file be encrypted and then deleted, the encryption should proceed without
+error and a file with the proper name should be created.  The input file will
+be renamed to have a .TMP extension and - if read only - the attempt to delete
+it will fail.  In this case the program also exits.  If a file with the .TMP
+extension already exists, several alternate file exensions will be tried.
+
+If there is a problem with the decryption of an encrypted file, consider 
+these possibilities:
+
+  1.  Make sure that the same program was used for encryption and
+      decryption.  None of the programs encrypt a file in the same way.
+
+  2.  Make sure that you use the -e option to encrypt a file, and the
+      -d option to decrypt a file.  Some programs do not require the
+      -d option, and it is easy to forget to use it.  For the programs 
+      that do not require the -d option, it is still OK to use it.
+
+  3.  Make sure that the same key is used for encryption and decryption.
+      If the key is changed in any small way, the files will not be
+      decrypted correctly.
+
+  4.  Some programs require that the simple file name of the original
+      file be the same as the simple file name of the file after 
+      decryption.  For example, if the original file is named TEST.ABC
+      and is encrypted to a file named SECURE.ZYX then when the file
+      is decrypted it must be named TEST.SDF where SDF can be anything.
+      You can find out if a program requires this by reading the built
+      in help on the CIPHER and KEY by giving the command "name -?"
+      where "name" is the name of the program.
+
+  5.  Make sure that the key format is correct.  Some keys may not
+      contain anything but alphabetic characters.  Some keys require
+      numbers in a specific range.  Read the KEY section of the help
+      information to verify that you are using the proper key format.
+
+
+CIPHERS THAT ARE IMPLEMENTED
+
+The following ciphers are implemented.  File names that end with "_C" are 
+block ciphers implemented in cipher block chaining (CBC) mode.  This section
+provides information on the cipher and key that is also found in the on-line
+help within each program.  
+
+ BLOWFISH.EXE    Blowfish cipher
+
+   CIPHER
+      The program uses the BLOWFISH cipher by Bruce Schneier.
+      A 64 bit key is used to encrypt a 64 bit block.
+
+      Because blocks of 8 bytes are processed, files that are not
+      a multiple of 8 bytes long may increase slightly in size.
+      Decrypted files may have additional spaces at the end.
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 72 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ BLOWFI_C.EXE    Blowfish with CBC
+
+   CIPHER
+      The program uses the BLOWFISH cipher by Bruce Schneier.
+      A 64 bit key is used to encrypt a 64 bit block in CBC mode.
+      Cipher block chaining uses vector initialization preset to the
+      simple 8 character file name.  The initialization is given by
+      the source file name on encryption, and destination file name
+      on decryption.  The simple file name of the decrypted file must
+      be the same as the simple file name of the original file.
+      Files with less than 8 bytes are not secure.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 72 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ CAESAR.EXE      Caesar (ROT 3) cipher
+
+   CIPHER
+      The CAESAR cipher shifts letters 3 places to the right mod 26.
+      To decrypt the CAESAR cipher, use the -d option which will
+      shift letters 3 places to the left mod 26.
+
+      For example, the CAESAR cipher converts an A to a D, a B to
+      an E, and so forth.  Upon decryption, a D is converted to an A,
+      an E to a B, and so forth.  Only letters are affected.  Upper
+      and lower case are retained in this version.
+
+      This cipher is mostly for historical interest.  It is said
+      that Julius Caesar used it to send his secret messages.
+
+   KEY
+      No key is used by this function.
+
+ DES1.EXE        64 bit DES cipher
+
+   CIPHER
+      The program uses the Data Encryption Standard (DES) cipher.
+      A 64 bit key is used to encrypt a 64 bit block.
+      This version uses the Outerbridge implementation.
+
+      Because blocks of 8 bytes are processed, files that are not
+      a multiple of 8 bytes long may increase slightly in size.
+      Decrypted files may have additional spaces at the end.
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 8 hex bytes such as
+      "F0 AB 45 7E 00 6C E4 AA" with spaces ignored, then that
+      exact 64 bit key is used.  Otherwise, the ASCII characters
+      are hashed to form a 64 bit key.  Weak and semi-weak keys
+      will produce a warning message.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ DES1_C.EXE      64 bit DES cipher with CBC
+
+   CIPHER
+      The program uses the Data Encryption Standard (DES) cipher.
+      A 64 bit key is used to encrypt a 64 bit block with CBC.
+      This version uses the Outerbridge implementation.
+      Cipher block chaining uses vector initialization preset to the
+      simple 8 character file name.  The initialization is given by
+      the source file name on encryption, and destination file name
+      on decryption.  The simple file name of the decrypted file must
+      be the same as the simple file name of the original file.
+      Files with less than 8 bytes are not secure.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 8 hex bytes such as
+      "F0 AB 45 7E 00 6C E4 AA" with spaces ignored, then that
+      exact 64 bit key is used.  Otherwise, the ASCII characters
+      are hashed to form a 64 bit key.  Weak and semi-weak
+      keys will produce a warning message.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ DES3_C.EXE      192 bit (triple) DES cipher with CBC
+
+   CIPHER
+      The program uses a triple Data Encryption Standard (DES) cipher.
+      A 192 bit key is used to encrypt a 64 bit block with CBC.
+      This version uses the Outerbridge implementation.
+      Cipher block chaining uses vector initialization preset to the
+      simple 8 character file name.  The initialization is given by
+      the source file name on encryption, and destination file name
+      on decryption.  The simple file name of the decrypted file must
+      thus be the same as the simple file name of the original file.
+      Encryption is not secure for files with less than 8 bytes.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 24 hex bytes such as
+      "5E2C B347 9AAC 3DAC 53C3 A42B 8C46 1CB5 F0AB 457E 006C E4AA"
+      with spaces ignored, then that exact 192 bit key is used.
+      Otherwise, the ASCII characters are hashed to form a 192 bit key.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ ENIGMA.EXE      Enigma cipher
+
+   CIPHER
+      The ENIGMA cipher uses multiple rotors.  It was originally
+      implemented as a mechanical rotor device, and was used by
+      Germany during the second World War.  Each rotor moves at a
+      different rate, giving a large period for the combination.
+      This version retains upper and lower case.
+
+   KEY
+      A key file name is expected as the argument for the -k option.
+
+      The key contains the following information:
+          n n n         - for rotor order (1 to 5)
+          x x x         - for ring setting, x is a letter
+          n             - Number of plugs (0 to 13)
+          xx xx xx ...  - Plug letter pairs, one for each n
+          x x x         - initial rotor position, x is a letter
+
+      If the '-k ?' option is given, or if there is no key file,
+      you will be prompted for key data.
+
+ IDEA.EXE        IDEA cipher
+
+   CIPHER
+      The program uses the IDEA cipher (International Data
+      Encryption Algorithm) formerly known as IPES.
+      A 128 bit key is used to encrypt a 64 bit block.
+
+      Because blocks of 8 bytes are processed, files that are not
+      a multiple of 8 bytes long may increase slightly in size.
+      Decrypted files may have additional spaces at the end.
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 16 hex bytes such as
+      "F0AB 457E 006C E4AA 98B3 3A47 BCB5 C222", but with
+      all spaces ignored, then that exact 128 bit key is used.
+      Otherwise, the ASCII characters are hashed to form a
+      128 bit key.  A zero key will produce a warning message.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ IDEA_C.EXE      IDEA with CBC
+
+   CIPHER
+      The program uses the IDEA cipher (International Data
+      Encryption Algorithm) formerly known as IPES in CBC mode.
+      A 128 bit key is used to encrypt a 64 bit block.
+      Cipher block chaining uses vector initialization preset to the
+      simple 8 character file name.  The initialization is given by
+      the source file name on encryption, and destination file name
+      on decryption.  The simple file name of the decrypted file must
+      be the same as the simple file name of the original file.
+      Files with less than 8 bytes are not secure.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 16 hex bytes such as
+      "F0AB 457E 006C E4AA 98B3 3A47 BCB5 C222", but with
+      all spaces ignored, then that exact 128 bit key is used.
+      Otherwise, the ASCII characters are hashed to form a
+      128 bit key.  A zero key will produce a warning message.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ KHUFU.EXE       Khufu cipher
+
+   CIPHER
+      The KHUFU cipher uses a 64 bit block cipher.
+      The 256 entry S-boxes are generated from a hashed
+      key phrase.  Sixteen rounds are used.  This is a
+      variation of the Zachariassen implementation.  S-boxes
+      are not modified between rounds in this version.
+      To increase security, the simple file name of the
+      encrypted file is used as part of the key. The source
+      file name for encryption and destination name for
+      decryption should be the same.  Use -d for decryption.
+      Because input is processed in blocks of 8 bytes, files
+      not a multiple of 8 may increase in size with spaces
+      appended to the end.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ KHUFU_C.EXE     Khufu with CBC
+
+   CIPHER
+      The KHUFU cipher uses a 64 bit block cipher in CBC mode.
+      The simple source file name on encryption and destination
+      file name on decryption is used for the initialization vector.
+      The source file name on encryption and the destination file
+      name on decryption should be the same.  The hashed file name
+      is used as the KHUFU auxiliary key.  The 256 entry S-boxes
+      are generated from a hashed key phrase.  Sixteen rounds are
+      used.  This is a variation of the Zachariassen implementation.
+      S-boxes are not modified between rounds in this version.
+      Files with less that 8 bytes are not secure.
+
+      Use -d for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ LUCIFER.EXE     Lucifer cipher
+
+   CIPHER
+      The program uses the LUCIFER cipher as developed by IBM.
+      A 128 bit key is used to encrypt a 128 bit block.
+
+      Because blocks of 16 bytes are processed, files that are not
+      a multiple of 16 bytes long may increase slightly in size.
+      Decrypted files may have additional spaces at the end.
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 16 hex bytes such as
+      "F0AB 457E 006C E4AA 0DB3 57E3 AB52 2CC4" with spaces
+      ignored, then that exact 128 bit key is used.  Otherwise,
+      the ASCII characters are hashed to form a 128 bit key.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ LUCIFR_C.EXE    Lucifer with CBC
+
+   CIPHER
+      The program uses the LUCIFER cipher as developed by IBM.
+      A 128 bit key is used to encrypt a 128 bit block.
+      CBC mode is used.  The simple file name of the source file
+      on encryption and destination file on decrytion is used as
+      the initialization vector. The simple file name of the
+      decrypted file must be the same as the simple file name
+      of the original file.  Files with less than 16 bytes are
+      not secure.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+      If the string evaluates to exactly 16 hex bytes such as
+      "F0AB 457E 006C E4AA 0DB3 57E3 AB52 2CC4" with spaces
+      ignored, then that exact 128 bit key is used.  Otherwise,
+      the ASCII characters are hashed to form a 128 bit key.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ OTPCCD.EXE      Compressed CDROM sectors used as a one time pad
+
+   CIPHER
+      This program performs an EXCLUSIVE OR operation between a file
+      and the contents of a CDROM used as a one time pad (OTP).
+      The data on the CDROM is compressed before it is used.
+      Failure occurs if the end of the CDROM is reached.  The
+      cipher does not require the -d option.  After each file
+      is processed, a line is output with decryption information:
+      output file name, OTP CDROM label, OPT sector, OTP offset,
+      and next sector and offset.  This can be redirected to a file.
+      It is very important to keep this information for decyrption.
+      If the key file exists, it will be updated.
+
+   KEY
+      The key is an ASCII string, given as "CDROM_ID SECTOR OFFSET"
+      where the CDROM_ID is the volume label of the CDROM that you
+      have selected to use as a one time pad.  If the label contains
+      all numbers, a drive designation is required.  The SECTORs are
+      numbered from 1 to just over 300000 for a completely full CDROM.
+      If the SECTOR is not given, a starting value of 1 is used.
+      The OFFSET is the byte offset within a sector and goes from 0
+      to 2047.  It may not be given unless the SECTOR is also defined.
+      If the OFFSET is not given, a value of 0 is used.  If two numbers
+      are given, they are taken as SECTOR and OFFSET.  If only one
+      number is given, it is taken as the SECTOR.  On the command line,
+      enclose the key string within quotes.  To use the CDROM in the
+      first CDROM drive without naming it, give "*" as the CDROM label.
+
+      If a key file exists, the first line is read, and it is scanned
+      for the CDROM label, sector, and offset.  If you also give a
+      CDROM label but no sector for the key on the command line, the key
+      file will be searched for a sector and offset.  If you give a
+      CDROM label, sector and offset on the command line for the key,
+      this overrides any information in the key file.  Do not use
+      quotes in the key file.  If the key file is read-only, it will
+      be completely ignored to prevent repeated use of the same pad.
+      An empty key file should not be created.
+
+ OTPCF.EXE       Compressed file used as a one time pad
+
+   CIPHER
+      This program performs an EXCLUSIVE OR operation between a file and
+      the contents of a compressed one time pad (OTP) file.  Failure
+      occurs if the compressed OTP file is shorter than the input file.
+      The cipher does not require the -d option.  After each file
+      is processed, a line is output with decryption information:
+      output file name, OTP name, OTP offset, and next offset.
+      It is very important to keep this information for decyrption.
+      If the key file exists, it will be updated.
+
+   KEY
+      The key is an ASCII string, given as "FILENAME.EXT OFFSET"
+      where the filename identifies the file that you have selected
+      to use as a one time pad.  The offset is the offset from the
+      beginning of the one time pad file, starting at 0.  It may be
+      omitted, in which case the file is used from the start.  If
+      an offset is given, enclose the entire phrase within quotes.
+
+      If a key file exists, the first line is read, and it is scanned
+      for the file name and the optional offset.  If you also give a
+      filename but no offset for the key on the command line, the key
+      file will be searched for an offset.  If not found, 0 is used.
+      If you give a filename and offset on the command line for the key,
+      this overrides any information in the key file.  Do not use
+      quotes in the key file.  If the key file is read-only, it will
+      be completely ignored to prevent repeated use of the same pad.
+
+      If there is no key or key file, you will be prompted for a key.
+
+ OTPF.EXE        File used as a one time pad
+
+   CIPHER
+      This program performs an EXCLUSIVE OR operation between a file and
+      the contents of a one time pad (OTP) file.  Failure occurs
+      if the OTP file is shorter than the input file.  The
+      cipher does not require the -d option.  After each file
+      is processed, a line is output with decryption information:
+      output file name, OTP name, OTP offset, and next offset.
+      It is very important to keep this information for decyrption.
+      If the key file exists, it will be updated.
+
+   KEY
+      The key is an ASCII string, given as "FILENAME.EXT OFFSET"
+      where the filename identifies the file that you have selected
+      to use as a one time pad.  The offset is the offset from the
+      beginning of the one time pad file, starting at 0.  It may be
+      omitted, in which case the file is used from the start.  If
+      an offset is given, enclose the entire phrase within quotes.
+
+      If a key file exists, the first line is read, and it is scanned
+      for the file name and the optional offset.  If you also give a
+      filename but no offset for the key on the command line, the key
+      file will be searched for an offset.  If not found, 0 is used.
+      If you give a filename and offset on the command line for the key,
+      this overrides any information in the key file.  Do not use
+      quotes in the key file.  If the key file is read-only, it will
+      be completely ignored to prevent repeated use of the same pad.
+
+      If there is no key or key file, you will be prompted for a key.
+
+ RANDOM.EXE      Random number XOR cipher
+
+   CIPHER
+      The XOR cipher performs an EXCLUSIVE OR operation
+      with the output of a random number generator that is
+      seeded with a hashed key phrase.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ ROT13.EXE       ROT 13 cipher, a unix favorite
+
+   CIPHER
+      The ROT13 cipher rotates letters 13 places to the
+      right mod 26.  Using the program twice restores the
+      original file.  This is often used on UNIX systems.
+
+   KEY
+      No key is used by this function.
+
+ TINYRSA.EXE     4-5 digit RSA cipher (really tiny)
+
+   CIPHER
+      The program uses the patented RSA cipher with 4-5 digit keys.
+      16 bit keys are is used to encrypt an 8 bit block with CBC.
+      For decryption, the 16 bit keys decrypt a 16 bit block to 8 bits.
+      Cipher block chaining uses zero based vector initialization.
+      Integer (16 bit or 4-5 digit) keys are used in this version.
+      The RSA cipher needs about 150 digits to be really secure.
+      This version is completely insecure and even includes a utility
+      to generate the private key from the public key.  However, the
+      program may be educational for learning about the cipher.
+
+      Use the -d option for decryption.
+
+   KEY
+      The key consists of two decimal numbers in the range 2-65535.
+      The keys must be generated using the program TINYKEY.  Use the
+      public key pair with the -e option for encrytion and the private
+      key pair with the -d option for decryption.
+
+      On the command line with the -k option, enclose the two
+      decimal numbers in quotes.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key pair.  Quotes are not needed.
+
+      If there is no key pair, you will be prompted for one.
+
+ TRANSPOS.EXE    Block transposition cipher
+
+   CIPHER
+      The TRANSPOSITION cipher reads in a block of data,
+      exchanges rows and columns, and writes the block out.
+      This is repeated for all blocks in the input file.
+      Unless a square block is used, the -d option must be
+      used for decryption.
+
+   KEY
+      The key is one or two numbers.  If you use more than one
+      number and give the key with the -k option on the command
+      line, place the phrase within quotes.  The first number is
+      the number of rows.  If a second number is given, it is the
+      number of columns.  Without a second number, the block will
+      have the number of rows and columns given by the first.  If
+      there is not enough data to fill the block, a smaller block
+      size is used.  The largest dimensions are 128 rows and 128
+      columns.  The smallest are 2 rows and 2 columns.  If data
+      does not completely fill a block, smaller sizes are used.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key.  Use no quotes in the key file.
+
+      If there is no key, you will be prompted for one.
+
+ VIGENERE.EXE    Vigenere cipher
+
+   CIPHER
+      The VIGENERE cipher is a polyalphabetic substitution cipher.
+      One letter of the key is used to encrypt one letter of text.
+      As letters of the key are used up, the key is reused.  To
+      decrypt the encrypted text, use the -d option and the same key.
+      This version retains character case.
+
+      This cipher is mostly for historical interest.  It was used
+      during the American Civil War, and has recently been used in
+      WordPerfect encryption.
+
+   KEY
+      The key is an ASCII string of ALPHABETIC characters.
+      Using non-alphabetical key characters may corrupt the text.
+      At most 256 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+ XOR.EXE         Recycled pass phrase XOR cipher
+
+   CIPHER
+      The XOR cipher performs an EXCLUSIVE OR operation
+      of a key phrase with the input file.  As the end of the
+      phrase is reached, the phrase is recycled.
+
+   KEY
+      The key is an ASCII string.  If you use more than one
+      word in the phrase and give the key with the -k option
+      on the command line, place the phrase within quotes.
+      At most 256 characters will be used in the phrase.
+
+      If a key file exists, only the first line is read, and
+      it is used as the key phrase.
+
+      If there is no key phrase, you will be prompted for one.
+
+The following programs probably provide the best security:  DES1_C, DES3_C, 
+IDEA_C, OTPCCD, and OTPCF.  All of these use block ciphers in CBC mode except
+the one time pads.  Use the character cipher programs with caution because 
+they are easily compromised.  The one time pad programs are secure only if 
+the CDROM or file is truly used only once.
+
+The OTPCCD.EXE program is somewhat slow because it must access the CDROM.  
+High speed CDROM drives will speed up the program.  The DES cipher is slower
+than the IDEA cipher.  For high speed and good security, consider using the 
+IDEA_C.EXE program.
+
+All encryption programs can be tested with the files found in TESTALL.ZIP.
+the files can be extracted using the command "PKUNZIP TESTALL".  Operation of
+the tests is explained in the file TEST.DOC that is contained in the zip file.
+
+
+SOURCE OF THE CODE
+
+All the integration code, the main program CRYPT.C, some cipher code, and 
+some support modules are Copyright 1995 Willis E. Howard, III. 
+
+The block cipher cryptography code and some of the character cipher code is 
+from Bruce Schneier's program disk set that he sells to go along with his 
+book "Applied Cryptography".  Most of the ciphers used here are explained in 
+that book.  Some of the cipher code is in the public domain.  Some is 
+copyrighted, although an effort has been made to exclude any code from this
+package that has not been released by the authors for use in other products.
+In general, the source code should be consulted for release information.
+
+The compression functions used in two of the programs were modified versions 
+of Haruhiko Okumura's LZSS.C program that was based on the Storer and 
+Szymanski modification of one of Lempel and Ziv's algorithms.  The function 
+was modified so that it would compress fixed length blocks.
+
+The block transposition and one time pad programs were written from scratch, 
+including the routines to interface to the CDROMs.  In addition, some of the 
+character ciphers and the tiny RSA program were written from scratch. 
+
+All of these programs can decrypt an encrypted file to a file that is 
+identical to the original file with the exception of the block ciphers 
+that do NOT use CBC mode.  For those programs, input files are processed 
+in blocks of 8 or 16 bytes.  Decrypted files of original files that were 
+not a multiple of 8 or 16 bytes in size will have spaces appended to the 
+end of the file.  Using the programs in CBC mode provides increased security 
+and maintains the file size.
+
+
+SOURCE CODE C MODULES
+
+Complete source code is supplied for all programs.  All are written in C and 
+require a recent Microsoft C compiler (CL 8.0).  Make files are supplied for 
+all the programs.  Microsoft NMAKE was used to make all programs.  The make 
+files define the /G3 option for the compiler and the EXE files will run only 
+on an 80386 or above.  If you have an older computer, the MAKE files for an
+8086 are stored in zip file MAKE8086.ZIP.  Use PKUNZIP to extract the files
+with command "PKUNZIP MAKE8086".  It is OK to overwrite the MAK files since 
+386 make files are in MAKE386.ZIP.  Then remake all the object and executable  
+files with the command by running file MAKEALL.BAT.  The 80386 programs run
+at least 10 times faster.
+
+The following C modules are provided.  Where original authors of the functions
+are known, credit is given.  Some modules may have additional authors, and the
+source files should be consulted.  Most modules have been modified in some way
+to allow easier interfacing to CRYPT.C, and the original authors are not to be
+blamed for any added bugs.
+
+BLOWFISH.C  -   Interface module to CRYPT.C that implements Bruce 
+                Schneier's Blowfish cipher.  A checksum has been
+                added to verify that the data file BLOWFISH.DAT
+                has not been changed.  This can be removed to
+                test different data files.
+
+BLOWFI_C.C  -   Interface to the Blowfish cipher in CBC mode.
+
+CAESAR.C    -   Interface module to CRYPT.C that implements the
+                Caesar (ROT 3) cipher.
+
+CDROMC.C    -   Utility module that interfaces to the CDROM and
+                the compression utilities.
+
+CRYPT.C     -   Main encryption / decryption program that handles
+                option processing, file names, file overwrite, and
+                other functions not associated with the cipher.
+
+CRYPTH.C    -   Help string array for CRYPT.C.
+
+DES1.C      -   Interface module to CRYPT.C that implements the
+                Richard Outerbridge DES function with a 64 bit
+                key and 64 bit block.
+
+DES1_C.C    -   Interface module to CRYPT.C that implements the
+                Richard Outerbridge DES function with a 64 bit
+                key and 64 bit block with cipher block chaining.
+
+DES3_C.C    -   Interface to the triple DES in CBC mode using the 
+                Outerbridge functions.
+
+ENIGMA.C    -   Interface module to CRYPT.C that implements the
+                Enigma cipher.  This uses the Henry Tieman 
+                implementation with additional code for decryption.
+
+GETOPT.C    -   This is the GNU GETOPT function for processing
+                command line parameters.
+
+HEX.C       -   Test if characters are HEX digits, and convert
+                hex digits to integers.
+
+IDEA.C      -   IDEA cipher as optimized by Colin Plumb.
+
+IDEA128.C   -   Interface module to CRYPT.C that interfaces to
+                the IDEA cipher as optimized by Colin Plumb.  The
+                compiled program is IDEA.EXE.
+
+IDEA128C.C  -   Interface to IDEA cipher by Plumb in CBC mode. This
+                is supposed to be one of the best ciphers.  The 
+                compiled program is IDEA_C.EXE.
+
+ISPRIME.C   -   Function that returns the primeness of an integer.
+                It has a big lookup table and is very fast.
+
+KHUFU.C     -   Interface module to CRYPT.C that interfaces to the
+                Zachariassen implementation of the KHUFU cipher.
+
+KHUFU_C.C   -   Interface to the Khufu cipher in CBC mode.
+
+LUCIFER.C   -   Interface module to CRYPT.C that implements the
+                LUCIFER cipher by Graven Cyphers.
+
+LUCIFR_C.C  -   Interface to the Lucifer cipher in CBC mode.
+
+NEXTFILE.C  -   Function for MSDOS wildcard file name match.
+
+NHASH.C     -   N-NASH function.
+
+OTPCCD.C    -   Interface module to CRYPT.C that implements the
+                one time pad cipher.  The compressed sectors
+                of a CDROM are used as the OTP.
+
+OTPCF.C     -   Interface module to CRYPT.C that implements the
+                one time pad cipher.  The compressed contents
+                of a file are used as the OTP.
+
+OTPF.C      -   Interface module to CRYPT.C that implements the one
+                time pad cipher.  The contents of an uncompressed
+                file are used as the OTP.
+
+RANDOM.C    -   Interface module to CRYPT.C that implements an XOR of
+                a file with the output of the pseudo-random number 
+                generator coded by James E. Wilson, seeded with the 
+                output of the N-HASH of a pass phrase.
+
+RND.C       -   Random number generator by James E. Wilson.
+
+ROT13.C     -   Interface module to CRYPT.C that implements the
+                cipher to rotate alphabetics by 13 places.
+
+TEMPFILE.C  -   Function to return a temporary file name.
+
+TEMPLATE.C  -   Generic interface module to interface your character
+                cipher to CRYPT.C.  Unmodified, the program just copies
+                the input file to the output file.
+
+TINYKEY.C   -   Program to make private and public keys for TINYRSA.
+                In discussions of the key pair, the second key of the
+                pair is always the modulus n.
+
+TINYRSA.C   -   Interface module to CRYPT.C that implements the RSA
+                cipher but with only 4-5 digits (not 200).  It only
+                demonstrates the principles of the RSA cipher.  
+                Cipher chaining is used.  With only 4-5 digits, it
+                can NOT be used for public key cryptography since
+                the program TINYSOLV can be used to easily generate
+                the private key from the public key.  This 
+                implementation provides almost no security.
+
+TINYSOLV.C  -   Program to compute the private keys for TINYRSA given
+                the public keys.
+
+TRANSPOS.C  -   Interface module to CRYPT.C that implements a
+                transposition cipher.
+
+VIGENERE.C  -   Interface module to CRYPT.C that implements the
+                Vigenere cipher.
+
+XOR.C       -   Interface module to CRYPT.C that implements the
+                primitive XOR with a recycled key phrase.  This is
+                one of the weakest ciphers.
+
+ZBLZSS.C    -   Compression function to process fixed length blocks of data.
+                The original LZSS.C function is from Haruhiko Okumura.
+                Although this is not the most efficient compression routine, 
+                it is very fast.  It removes most of the redundancy from a 
+                data block, improving the hiding power of the one time pad.
+                Although the module includes compression and expansion
+                functions, only the compression function is used by the 
+                encryption programs.  
+
+
+EXAMPLES
+
+The following are examples of encryption and decryption commands:
+
+  random -e test5 -k "too much too soon"
+      Encrypt file "test5" with the pseudo random number generator seeded 
+      with hashed key "too much too soon".
+
+  random -d test5 -o test5.out -k ?
+      Decrypt file "test5" with the pseudo random number generator seeded 
+      with a hashed key that is input from the keyboard, and write the
+      output to file  "test5.out".  Clear the screen after the key is input.
+      Clearing the screen is important if file processing takes a while
+      and you do not want others to read the key phrase on the screen.
+
+  caesar -d test5 -o test5.out -G
+      Decrypt file "test5" to file "test5.out" with the Caesar cipher.  
+      Delete the original file "test5" with the slow Government delete after 
+      decryption.
+
+  des1 -e test5 -k 5e3e5a2b
+      Encrypt file "test5" with the DES cipher and hex key 0x5e3e5a2b.
+
+  des3_c -d -q -# 33 test5 -k junk
+      Decrypt file "test5" with the triple DES cipher and a key generated 
+      from the hashed phrase "junk".  The cipher block chaining mode will be 
+      used.  The file "test5" will be deleted using the quick delete procedure 
+      after the original file has been overwritten with decimal 33's.  If the 
+      original file is read only, it is renamed test5.tmp but not deleted.  If
+      file test5.tmp already exists, another extension will be selected.  An
+      error will be reported if there is an attempt to delete a read only
+      file.
+
+  otpccd test5 -k "* 200 23"
+      Encrypt (or decrypt) file "test5" using the CDROM in the first CDROM 
+      drive, starting with 23rd byte of sector 200 after the sector has been 
+      compressed.  The key will be echoed to the screen, along with the
+      sector and offset of the next available location on the CDROM.
+
+  idea_c *.c -k ?
+      Encrypt all files *.c with the IDEA cipher in cipher block chaining 
+      mode.  The key will be read from the keyboard, and the screen will be 
+      cleared as soon as the ENTER key is pressed after entering the key
+      phrase.
