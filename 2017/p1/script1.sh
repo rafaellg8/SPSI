@@ -1,1 +1,0 @@
-for i in {0..1023}; do printf "0" >> input.bin; done

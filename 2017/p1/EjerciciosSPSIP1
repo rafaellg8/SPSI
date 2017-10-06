@@ -1,0 +1,39 @@
+3) Input bin con diferentes cifrados y explicar los resultados
+
+7) Simplemente el script y la captura de pantalla
+
+8) Igual escript 8 y captura de pantalla
+
+9) Resultado de descifrar, tenemos descifrado8.txt:
+
+00000000: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+00000010: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+00000020: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+.....
+
+Output2.bin
+
+00000000: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+00000010: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+00000020: 0000 0000 fe7f 0000 00b0 ab7d 9b52 316c  ...........}.R1l
+
+
+Al cifrar otra vez, con la misma clave y el mismo vector de inicialización 
+un archivo previamente cifrado, volvemos al archivo original, o descifrado.
+
+10) RC5 (explicamos que es rc5)
+
+11) 
+#11.3
+openssl enc -rc4 -in input.bin -out rc4.txt -K 0101010101010101
+openssl enc -rc4 -in input.bin -out rc4-v2.txt -K 01FE01FE01FE01FE
+
+#11.4
+
+openssl enc -rc4 -in input1.bin -out rc4-input1.txt -K 01FEAA
+openssl enc -rc4 -in input1.bin -out rc4-input1-v2.txt -K 01FEAA
+
+
+#11.5
+#no tiene vector de inicializacion
+
