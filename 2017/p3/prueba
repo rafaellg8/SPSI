@@ -1,0 +1,1 @@
+openssl pkeyutl -inkey rafaECpriv.pem -peerkey lachicaECpub.pem -derive -out key.bin
